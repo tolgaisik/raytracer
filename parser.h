@@ -28,7 +28,7 @@ namespace parser
         Vec3f position;
         Vec3f gaze;
         Vec3f up;
-        Vec4f near_plane;
+        Vec4f near_plane; // left,right,bottom,top
         float near_distance;
         int image_width, image_height;
         std::string image_name;
