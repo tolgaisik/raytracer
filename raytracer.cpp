@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
                 float s_v = (y + 0.5f) * pixel_height;
                 vec3 image_plane_point = top_left_of_image_plane + cross_product_vector * s_u + up * s_v;
                 vec3 direction = image_plane_point - vec3(camera.position);
-                ray ray(camera.position, direction);
+                ray ray(camera.position, direction, &scene);
                 color *color = calculate_color(camera, ray, scene);
                 image[index++] = color->r;
                 image[index++] = color->g;
