@@ -21,7 +21,7 @@ public:
         scene = scene__;
     }
     bool intersect(const parser::Sphere &sphere) const;
-    bool intersect(const parser::Triangle &triangle) const;
+    bool intersect(const parser::Face &face) const;
     bool intersect(const parser::Mesh &mesh) const;
     static float discriminant(float a, float b, float c);
 };
@@ -43,12 +43,12 @@ bool ray::intersect(const parser::Sphere &sphere) const
     float c = vec3::dot(ocenter, ocenter) - radius * radius;
     return (ray::discriminant(a, b, c) >= 0);
 }
-bool ray::intersect(const parser::Triangle &triangle) const
+bool ray::intersect(const parser::Face &face) const
 {
     vec3 vp, va, vb, vc;
-    vec3 a = vec3(this->scene->vertex_data[triangle.indices.v0_id - 1]);
-    vec3 b = vec3(this->scene->vertex_data[triangle.indices.v1_id - 1]);
-    vec3 c = vec3(this->scene->vertex_data[triangle.indices.v2_id - 1]);
+    vec3 a = vec3(this->scene->vertex_data[face.v0_id - 1]);
+    vec3 b = vec3(this->scene->vertex_data[face.v1_id - 1]);
+    vec3 c = vec3(this->scene->vertex_data[face.v2_id - 1]);
     vec3 normal = vec3::cross((c - b), (a - b));
     float parallelCheck = vec3::dot(normal, *direction);
     if (fabs(parallelCheck) < scene->shadow_ray_epsilon)
@@ -67,4 +67,5 @@ bool ray::intersect(const parser::Triangle &triangle) const
         return false;
     return true;
 }
+
 #endif

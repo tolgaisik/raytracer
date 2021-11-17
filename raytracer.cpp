@@ -31,9 +31,21 @@ color *calculate_color(const parser::Camera &camera, const ray &__ray__, const p
     int numberoftriangles = scene.triangles.size();
     for (int i = 0; i < numberoftriangles; ++i)
     {
-        if (__ray__.intersect(scene.triangles[i]))
+        if (__ray__.intersect(scene.triangles[i].indices))
         {
             retval->setRGB((unsigned char)(255), (unsigned char)(255), (unsigned char)(255));
+        }
+    }
+    int numberofmeshes = scene.meshes.size();
+    for (int i = 0; i < numberofmeshes; ++i)
+    {
+
+        for (int j = 0; j < scene.meshes[i].faces.size(); ++j)
+        {
+            if (__ray__.intersect(scene.meshes[i].faces[j]))
+            {
+                retval->setRGB((unsigned char)(255), (unsigned char)(255), (unsigned char)(255));
+            }
         }
     }
     return retval;
