@@ -12,7 +12,7 @@ public:
 class sphere
 {
 public:
-    float radius;
+    double radius;
     vec3 position;
 };
 #endif

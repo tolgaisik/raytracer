@@ -1,5 +1,5 @@
-#ifndef __VEC3__
-#define __VEC3__
+#ifndef __VEC3__H
+#define __VEC3__H
 class vec3
 {
 public:
@@ -12,7 +12,7 @@ public:
     vec3 operator-(const vec3 &v) const;
     vec3 operator+(const vec3 &v) const;
     vec3 operator-() const;
-    static float dot(const vec3 &first, const vec3 &second);
+    static double dot(const vec3 &first, const vec3 &second);
     static vec3 cross(const vec3 &first, const vec3 &second);
     float norm()
     {
@@ -41,9 +41,10 @@ vec3 vec3::operator-() const
 {
     return vec3(-x, -y, -z);
 }
-float vec3::dot(const vec3 &first, const vec3 &second)
+double vec3::dot(const vec3 &first, const vec3 &second)
 {
-    return first.x * second.x + first.y * second.y + first.z * second.z;
+    double retval = first.x * second.x + first.y * second.y + first.z * second.z;
+    return retval;
 }
 vec3 vec3::cross(const vec3 &f, const vec3 &s)
 {

@@ -14,18 +14,35 @@ vec3 get_center_of_image_plane(const parser::Camera &camera)
 
 vec3 get_top_left_of_image_plane(const parser::Camera &camera, const vec3 &center, vec3 &cross_product_vector, vec3 &up)
 {
-    vec3 topleft = center + cross_product_vector * camera.near_plane.x + up * camera.near_plane.y;
+    vec3 topleft = center + cross_product_vector * camera.near_plane.x + up * camera.near_plane.w;
     return topleft;
 }
-color *calculate_color(const parser::Camera &camera, const ray &ray, const parser::Scene &scene)
+color *calculate_color(const parser::Camera &camera, const ray &__ray__, const parser::Scene &scene)
 {
-    color *retval = new color(static_cast<unsigned char>(255), static_cast<unsigned char>(255), static_cast<unsigned char>(255));
+    color *retval = new color();
+    int numberofspheres = scene.spheres.size();
+    for (int i = 0; i < numberofspheres; ++i)
+    {
+        if (__ray__.intersect(scene.spheres[i]))
+        {
+            retval->setRGB((unsigned char)(255), (unsigned char)(255), (unsigned char)(255));
+        }
+    }
+    int numberoftriangles = scene.triangles.size();
+    for (int i = 0; i < numberoftriangles; ++i)
+    {
+        if (__ray__.intersect(scene.triangles[i]))
+        {
+            retval->setRGB((unsigned char)(255), (unsigned char)(255), (unsigned char)(255));
+        }
+    }
     return retval;
 }
 int main(int argc, char *argv[])
 {
     parser::Scene scene;
     scene.loadFromXml(argv[1]);
+
     int numberofcameras = scene.cameras.size();
     for (int camera_index = 0; camera_index < numberofcameras; ++camera_index)
     {
@@ -36,24 +53,23 @@ int main(int argc, char *argv[])
         int index = 0;
         vec3 gaze(camera.gaze);
         vec3 up(camera.up);
-        vec3 cross_product_vector = vec3::cross(-gaze, up);
+        vec3 cross_product_vector = -vec3::cross(-gaze, up); // TODO cross products is wrong sided
         vec3 center_of_image_plane = get_center_of_image_plane(camera);
         vec3 top_left_of_image_plane = get_top_left_of_image_plane(camera, center_of_image_plane, cross_product_vector, up);
 
         float pixel_width, pixel_height;
-        pixel_width = (camera.near_plane.x - camera.near_plane.y) / image_width;
+        pixel_width = (camera.near_plane.y - camera.near_plane.x) / image_width;
         pixel_height = (camera.near_plane.w - camera.near_plane.z) / image_height;
-
         for (int y = 0; y < image_height; ++y)
         {
             for (int x = 0; x < image_width; ++x)
             {
                 float s_u = (x + 0.5f) * pixel_width;
                 float s_v = (y + 0.5f) * pixel_height;
-                vec3 image_plane_point = top_left_of_image_plane + cross_product_vector * s_u + up * s_v;
+                vec3 image_plane_point = top_left_of_image_plane + cross_product_vector * s_u - up * s_v;
                 vec3 direction = image_plane_point - vec3(camera.position);
-                ray ray(camera.position, direction, &scene);
-                color *color = calculate_color(camera, ray, scene);
+                ray __ray__(camera.position, direction, &scene);
+                color *color = calculate_color(camera, __ray__, scene);
                 image[index++] = color->r;
                 image[index++] = color->g;
                 image[index++] = color->b;
