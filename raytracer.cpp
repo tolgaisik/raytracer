@@ -6,8 +6,26 @@
 #include "color.h"
 #include "ray.h"
 #include "shape.h"
+#define max(a, b) ((a) > (b) ? (a) : (b));
 typedef unsigned char RGB[3];
-
+bool isInShadow(const ray &__ray__, std::vector<triangle> &__triangles__, const std::vector<parser::Sphere> &spheres)
+{
+    int numberofspheres = spheres.size();
+    for (int i = 0; i < numberofspheres; ++i)
+    {
+        float t_sphere = __ray__.intersect(spheres[i]);
+        if (t_sphere > 0)
+            return true;
+    }
+    int numberoftriangles = __triangles__.size();
+    for (int i = 0; i < numberoftriangles; ++i)
+    {
+        float t_triangle = __ray__.intersect(__triangles__[i]);
+        if (t_triangle > 0)
+            return true;
+    }
+    return false;
+}
 vec3 get_center_of_image_plane(const parser::Camera &camera)
 {
     return vec3(camera.position) + vec3(camera.gaze) * camera.near_distance;
@@ -40,8 +58,10 @@ void create_triangles(const parser::Scene &scene, std::vector<triangle> &triangl
         }
     }
 }
+
 color *calculate_color(const parser::Camera &camera, const ray &__ray__, const parser::Scene &scene, std::vector<triangle> &triangles)
 {
+    __ray__.direction->normalize();
     color *retval = new color();
     sphere *s = nullptr;
     triangle *t = nullptr;
@@ -80,11 +100,92 @@ color *calculate_color(const parser::Camera &camera, const ray &__ray__, const p
 
     if (t != nullptr)
     {
-        retval->setRGB(static_cast<unsigned char>(255), static_cast<unsigned char>(255), static_cast<unsigned char>(255));
+        int numberoflights = scene.point_lights.size();
+        vec3 outgoingRadiance = vec3(0.0f, 0.0f, 0.0f);
+        parser::Material material = scene.materials[t->material_id - 1];
+        vec3 x = *(__ray__.origin) + (*__ray__.direction) * tmin;
+        vec3 specular = vec3(0.0f, 0.0f, 0.0f);
+        vec3 normal = t->normal;
+        normal.normalize();
+        for (int i = 0; i < numberoflights; i++)
+        {
+            vec3 lightPosition = vec3(scene.point_lights[i].position);
+            vec3 lightDirection = lightPosition - x;
+            lightDirection.normalize();
+            ray shadowChecker = ray(normal * scene.shadow_ray_epsilon + x, lightDirection, &scene);
+            if (isInShadow(shadowChecker, triangles, scene.spheres))
+            {
+                continue;
+            }
+            vec3 w = lightPosition - x;
+            float rsquare = w.x * w.x + w.y * w.y + w.z * w.z;
+            w.normalize();
+            float cosine = max(0, vec3::dot(w, normal));
+            vec3 intensity = vec3(scene.point_lights[i].intensity);
+            vec3 diffuseReflectance = vec3(material.diffuse);
+            vec3 E = intensity / rsquare;
+            outgoingRadiance = outgoingRadiance + (diffuseReflectance * cosine) * E;
+            vec3 w_o = vec3(camera.position) - x;
+            w_o.normalize();
+            vec3 denomitor = w + w_o;
+            denomitor.normalize();
+            vec3 h = (denomitor) / (denomitor.norm());
+            h.normalize();
+            float temp = max(0, vec3::dot(normal, h));
+            if (vec3::dot(w, normal) > 0)
+            {
+                specular = specular + vec3(material.specular) * E * pow(temp, material.phong_exponent);
+            }
+        }
+        outgoingRadiance = specular + outgoingRadiance + vec3(scene.ambient_light) * vec3(material.ambient);
+        retval->setRGB((int)(outgoingRadiance.x), (int)(outgoingRadiance.y), (int)(outgoingRadiance.z));
     }
-    if (s != nullptr)
+    else if (s != nullptr)
     {
-        retval->setRGB(static_cast<unsigned char>(255), static_cast<unsigned char>(255), static_cast<unsigned char>(255));
+        int numberoflights = scene.point_lights.size();
+        vec3 outgoingRadiance = vec3(0.0f, 0.0f, 0.0f);
+        parser::Material material = scene.materials[s->material_id - 1];
+        vec3 x = *__ray__.origin + (*__ray__.direction) * tmin;
+        vec3 specular = vec3(0.0f, 0.0f, 0.0f);
+        vec3 centerofsphere = vec3(scene.vertex_data[s->center_vertex_id - 1]);
+        vec3 normal = x - centerofsphere;
+        normal.normalize();
+        for (int i = 0; i < numberoflights; i++)
+        {
+            vec3 lightPosition = vec3(scene.point_lights[i].position);
+            vec3 lightDirection = lightPosition - x;
+            lightDirection.normalize();
+            ray shadowChecker = ray(normal * scene.shadow_ray_epsilon + x, lightDirection, &scene);
+            if (isInShadow(shadowChecker, triangles, scene.spheres))
+            {
+                continue;
+            }
+            vec3 w = lightPosition - x;
+            float rsquare = w.x * w.x + w.y * w.y + w.z * w.z;
+            w.normalize();
+            float cosine = max(0, vec3::dot(w, normal));
+            vec3 intensity = vec3(scene.point_lights[i].intensity);
+            vec3 diffuseReflectance = vec3(material.diffuse);
+            vec3 E = intensity / rsquare;
+            outgoingRadiance = outgoingRadiance + (diffuseReflectance * cosine) * E;
+            vec3 w_o = vec3(camera.position) - x;
+            w_o.normalize();
+            vec3 denomitor = w + w_o;
+            denomitor.normalize();
+            vec3 h = (denomitor) / (denomitor.norm());
+            h.normalize();
+            float temp = max(0, vec3::dot(normal, h));
+            if (vec3::dot(w, normal) > 0)
+            {
+                specular = specular + vec3(material.specular) * E * pow(temp, material.phong_exponent);
+            }
+        }
+        outgoingRadiance = specular + outgoingRadiance + vec3(scene.ambient_light) * vec3(material.ambient);
+        retval->setRGB((int)(outgoingRadiance.x), (int)(outgoingRadiance.y), (int)(outgoingRadiance.z));
+    }
+    else
+    {
+        retval->setRGB((int)(scene.background_color.x), (int)(scene.background_color.y), (int)(scene.background_color.z));
     }
     delete s;
     delete t;
@@ -124,9 +225,9 @@ int main(int argc, char *argv[])
                 vec3 direction = image_plane_point - vec3(camera.position);
                 ray __ray__(camera.position, direction, &scene);
                 color *color = calculate_color(camera, __ray__, scene, triangles);
-                image[index++] = color->r;
-                image[index++] = color->g;
-                image[index++] = color->b;
+                image[index++] = color->r > 255 ? 255 : color->r;
+                image[index++] = color->g > 255 ? 255 : color->g;
+                image[index++] = color->b > 255 ? 255 : color->b;
                 delete color;
             }
         }

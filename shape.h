@@ -40,6 +40,7 @@ public:
     {
         radius = s.radius;
         center_vertex_id = s.center_vertex_id;
+        material_id = s.material_id;
     }
 };
 #endif

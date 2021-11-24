@@ -14,6 +14,12 @@ public:
         origin = new vec3(origin__);
         scene = scene__;
     };
+    ray(const vec3 &origin__, const vec3 &direction__, const parser::Scene *scene__)
+    {
+        direction = new vec3(direction__);
+        origin = new vec3(origin__);
+        scene = scene__;
+    };
     ray(const ray &r, const parser::Scene *scene__)
     {
         direction = new vec3(*r.direction);
@@ -45,7 +51,7 @@ float ray::intersect(const parser::Sphere &sphere) const
         return -1.0;
     float t1 = (-b + sqrt(d)) / (2 * a);
     float t2 = (-b - sqrt(d)) / (2 * a);
-    return t1 > t2 ? t1 : t2;
+    return t1 > t2 ? t2 : t1;
 }
 float ray::intersect(const parser::Face &face) const
 {
@@ -81,19 +87,19 @@ float ray::intersect(triangle &__triangle__) const
     vec3 normal = __triangle__.normal;
     float parallelCheck = vec3::dot(normal, *direction);
     if (fabs(parallelCheck) < scene->shadow_ray_epsilon)
-        return INFINITY;
+        return -1.0;
     float d = vec3::dot(normal, a);
     float t = (d - vec3::dot(normal, *origin)) / parallelCheck;
     vec3 intersectionPoint = *origin + *direction * t;
     va = vec3::cross(b - a, intersectionPoint - a);
     if (vec3::dot(va, normal) < 0)
-        return INFINITY;
+        return -1.0;
     vb = vec3::cross(c - b, intersectionPoint - b);
     if (vec3::dot(vb, normal) < 0)
-        return INFINITY;
+        return -1.0;
     vc = vec3::cross(a - c, intersectionPoint - c);
     if (vec3::dot(vc, normal) < 0)
-        return INFINITY;
+        return -1.0;
     return t;
 }
 

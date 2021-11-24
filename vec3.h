@@ -11,9 +11,12 @@ public:
     vec3 operator*(float scalar) const;
     vec3 operator-(const vec3 &v) const;
     vec3 operator+(const vec3 &v) const;
+    vec3 operator*(const vec3 &v) const;
     vec3 operator-() const;
+    vec3 operator/(float scalar) const;
     static double dot(const vec3 &first, const vec3 &second);
     static vec3 cross(const vec3 &first, const vec3 &second);
+    void normalize();
     float norm()
     {
         return sqrt(x * x + y * y + z * z);
@@ -53,4 +56,20 @@ vec3 vec3::cross(const vec3 &f, const vec3 &s)
     float cz = f.x * s.y - f.y * s.x;
     return vec3(cx, cy, cz);
 }
+vec3 vec3::operator*(const vec3 &v) const
+{
+    return vec3(x * v.x, y * v.y, z * v.z);
+}
+vec3 vec3::operator/(float scalar) const
+{
+    return vec3(x / scalar, y / scalar, z / scalar);
+}
+void vec3::normalize()
+{
+    float norm = this->norm();
+    this->x = this->x / norm;
+    this->y = this->y / norm;
+    this->z = this->z / norm;
+}
+
 #endif
