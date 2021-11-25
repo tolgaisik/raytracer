@@ -59,7 +59,7 @@ void create_triangles(const parser::Scene &scene, std::vector<triangle> &triangl
     }
 }
 
-color *calculate_color(const parser::Camera &camera, const ray &__ray__, const parser::Scene &scene, std::vector<triangle> &triangles)
+color *calculate_color(const ray &__ray__, const parser::Scene &scene, std::vector<triangle> &triangles, int depth)
 {
     __ray__.direction->normalize();
     color *retval = new color();
@@ -106,6 +106,7 @@ color *calculate_color(const parser::Camera &camera, const ray &__ray__, const p
         vec3 x = *(__ray__.origin) + (*__ray__.direction) * tmin;
         vec3 specular = vec3(0.0f, 0.0f, 0.0f);
         vec3 normal = t->normal;
+        vec3 mirror_effect = vec3(0.0f, 0.0f, 0.0f);
         normal.normalize();
         for (int i = 0; i < numberoflights; i++)
         {
@@ -125,7 +126,7 @@ color *calculate_color(const parser::Camera &camera, const ray &__ray__, const p
             vec3 diffuseReflectance = vec3(material.diffuse);
             vec3 E = intensity / rsquare;
             outgoingRadiance = outgoingRadiance + (diffuseReflectance * cosine) * E;
-            vec3 w_o = vec3(camera.position) - x;
+            vec3 w_o = (*__ray__.origin) - x;
             w_o.normalize();
             vec3 denomitor = w + w_o;
             denomitor.normalize();
@@ -136,8 +137,16 @@ color *calculate_color(const parser::Camera &camera, const ray &__ray__, const p
             {
                 specular = specular + vec3(material.specular) * E * pow(temp, material.phong_exponent);
             }
+            if(material.is_mirror && depth < scene.max_recursion_depth) {
+                vec3 newdirection = (-w_o)+normal*(vec3::dot(normal, w_o))*2;
+                newdirection.normalize();
+                ray reflectionRay(x+normal*scene.shadow_ray_epsilon, newdirection, &scene);
+                color* reflection = calculate_color(reflectionRay, scene, triangles, depth+1);
+                mirror_effect = vec3(material.mirror)*vec3(reflection->r, reflection->g, reflection->b);
+                delete reflection;
+            }
         }
-        outgoingRadiance = specular + outgoingRadiance + vec3(scene.ambient_light) * vec3(material.ambient);
+        outgoingRadiance = mirror_effect + specular + outgoingRadiance + vec3(scene.ambient_light) * vec3(material.ambient);
         retval->setRGB((int)(outgoingRadiance.x), (int)(outgoingRadiance.y), (int)(outgoingRadiance.z));
     }
     else if (s != nullptr)
@@ -168,7 +177,7 @@ color *calculate_color(const parser::Camera &camera, const ray &__ray__, const p
             vec3 diffuseReflectance = vec3(material.diffuse);
             vec3 E = intensity / rsquare;
             outgoingRadiance = outgoingRadiance + (diffuseReflectance * cosine) * E;
-            vec3 w_o = vec3(camera.position) - x;
+            vec3 w_o = (*__ray__.origin) - x;
             w_o.normalize();
             vec3 denomitor = w + w_o;
             denomitor.normalize();
@@ -224,7 +233,7 @@ int main(int argc, char *argv[])
                 vec3 image_plane_point = top_left_of_image_plane + cross_product_vector * s_u - up * s_v;
                 vec3 direction = image_plane_point - vec3(camera.position);
                 ray __ray__(camera.position, direction, &scene);
-                color *color = calculate_color(camera, __ray__, scene, triangles);
+                color *color = calculate_color(__ray__, scene, triangles, 0);
                 image[index++] = color->r > 255 ? 255 : color->r;
                 image[index++] = color->g > 255 ? 255 : color->g;
                 image[index++] = color->b > 255 ? 255 : color->b;
