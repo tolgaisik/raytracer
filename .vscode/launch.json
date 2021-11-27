@@ -9,7 +9,7 @@
         "type": "lldb",
         "request": "launch",
         "program": "${fileDirname}/raytracer",
-        "args": ["./inputs/simple_reflectance.xml"],
+        "args": ["./inputs/mirror_spheres.xml"],
         "stopAtEntry": true,
         "cwd": "${workspaceFolder}",
         "environment": [],

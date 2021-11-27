@@ -7,6 +7,7 @@ class ray
 public:
     vec3 *origin, *direction;
     const parser::Scene *scene;
+    bool isPrimary = true;
     ray() : origin(new vec3()), direction(new vec3()){};
     ray(const parser::Vec3f &origin__, const vec3 &direction__, const parser::Scene *scene__)
     {
@@ -30,6 +31,9 @@ public:
     float intersect(const parser::Face &face) const;
     float intersect(triangle &__triangle__) const;
     static float discriminant(float a, float b, float c);
+    void notPrimary() {
+        this->isPrimary = false;
+    }
 };
 float ray::discriminant(float a, float b, float c)
 {

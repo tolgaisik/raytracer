@@ -26,8 +26,8 @@ public:
         vec3 a = vec3(scene.vertex_data[this->indices.v0_id - 1]);
         vec3 b = vec3(scene.vertex_data[this->indices.v1_id - 1]);
         vec3 c = vec3(scene.vertex_data[this->indices.v2_id - 1]);
-        vec3 normal = vec3::cross((c - b), (a - b));
-        set_normal(normal);
+        normal = vec3::cross((c - b), (a - b));
+        normal.normalize();
     }
 };
 class sphere
